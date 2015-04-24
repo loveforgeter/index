@@ -1,16 +1,25 @@
 package index
 
+const (
+	MAX_ARRAY_SIZE = 10
+)
+
+type hash map[rune]*TrieNode
+type array []*TrieNode
+
 // TrieNode 字典树节点
 type TrieNode struct {
-	value    []interface{}      // 节点的值
-	children map[rune]*TrieNode // 子节点
+	key    rune               // 节点代表的值
+	values []interface{}      // 节点的值
+	array  []*TrieNode        // 子节点
+	hash   map[rune]*TrieNode // 子节点
 }
 
 // NewTrieNode 新建字典树节点
 func NewTrieNode() *TrieNode {
 	return &TrieNode{
-		children: make(map[rune]*TrieNode),
-		value:    make([]interface{}, 0),
+		values: make([]interface{}, 0),
+		array:  make([]*TrieNode, 0),
 	}
 }
 
@@ -26,17 +35,17 @@ func (self *TrieNode) Insert(key string, value interface{}) {
 	}
 
 	node := self
-	for _, ch := range key {
-		if child, ok := node.children[ch]; !ok {
+	for _, r := range key {
+		if child := node.get(r); nil == child {
 			child = NewTrieNode()
-			node.children[ch] = child
+			child.key = r
+			node.set(r, child)
 			node = child
 		} else {
 			node = child
 		}
 	}
-	return
-	node.value = append(node.value, value)
+	node.values = append(node.values, value)
 }
 
 // HasKey 查看是否存在名称为key的节点
@@ -46,13 +55,14 @@ func (self *TrieNode) HasKey(key string) bool {
 	}
 
 	node := self
-	var ok bool
-	for _, ch := range key {
-		if node, ok = node.children[ch]; !ok || nil == node {
+	for _, r := range key {
+		if node = node.get(r); nil == node {
 			return false
 		}
 	}
-	if len(node.value) == 0 {
+
+	// 没有值的节点为空节点
+	if len(node.values) == 0 {
 		return false
 	}
 	return true
@@ -65,9 +75,8 @@ func (self *TrieNode) HasPrefix(prefix string) bool {
 	}
 
 	node := self
-	var ok bool
-	for _, ch := range prefix {
-		if node, ok = node.children[ch]; !ok {
+	for _, r := range prefix {
+		if node = node.get(r); nil == node {
 			return false
 		}
 	}
@@ -87,16 +96,17 @@ func (self *TrieNode) ValueForKey(key string) []interface{} {
 	}
 
 	node := self
-	var ok bool
-	for _, ch := range key {
-		if node, ok = node.children[ch]; !ok {
+	for _, r := range key {
+		if node = node.get(r); nil == node {
 			return nil
 		}
 	}
-	if len(node.value) == 0 {
+
+	if len(node.values) == 0 {
 		return nil
 	}
-	return node.value
+
+	return node.values
 }
 
 // ValueForPrefix 获取节点名称前缀为prefix的值
@@ -106,24 +116,25 @@ func (self *TrieNode) ValueForPrefix(prefix string) map[string][]interface{} {
 	}
 
 	node := self
-	var ok bool
-	ret := make(map[string][]interface{})
-	for _, ch := range prefix {
-		if node, ok = node.children[ch]; !ok {
+	result := make(map[string][]interface{})
+	for _, r := range prefix {
+		if node = node.get(r); nil == node {
 			return nil
 		}
 	}
 
 	// 遍历节点并加入结果
-	node.walk(func(n *TrieNode) {
-		if len(n.value) != 0 {
+	node.walk(func(key string, n *TrieNode) {
+		if len(n.values) != 0 {
+			result[key] = n.values
 		}
-	})
+	}, prefix)
 
-	if len(ret) != 0 {
-		return ret
+	if len(result) == 0 {
+		return nil
 	}
-	return nil
+
+	return result
 }
 
 // ValueForSubstr 获取节点名称包含substr的值
@@ -134,16 +145,56 @@ func (self *TrieNode) ValueForSubstr(substr string) map[string][]interface{} {
 
 // Destroy 销毁字典树
 func (self *TrieNode) Destroy() {
-	for key, child := range self.children {
-		child.Destroy()
-		delete(self.children, key)
+}
+
+// walk 遍历节点，key代表从根到父节点所代表的字符串
+func (self *TrieNode) walk(f func(key string, node *TrieNode), key string) {
+	// 当前节点代表的字符串
+	current := key + string([]rune{self.key})
+	f(current, self)
+	if nil != self.array {
+		for _, child := range self.array {
+			child.walk(f, current)
+		}
+	} else {
+		for _, child := range self.hash {
+			child.walk(f, current)
+		}
 	}
 }
 
-// walk 遍历节点
-func (self *TrieNode) walk(f func(node *TrieNode)) {
-	f(self)
-	for _, node := range self.children {
-		node.walk(f)
+// get 获取子节点
+func (self *TrieNode) get(r rune) *TrieNode {
+	if nil != self.array {
+		for _, node := range self.array {
+			if node.key == r {
+				return node
+			}
+		}
+	} else {
+		return self.hash[r]
+	}
+	return nil
+}
+
+// set 设置子节点
+func (self *TrieNode) set(r rune, child *TrieNode) {
+	// TODO:重复处理
+	if nil == child {
+		return
+	}
+	if nil != self.hash {
+		self.hash[r] = child
+	} else {
+		if MAX_ARRAY_SIZE == len(self.array) {
+			self.hash = make(map[rune]*TrieNode)
+			for _, node := range self.array {
+				self.hash[node.key] = node
+			}
+			self.hash[r] = child
+			self.array = nil
+		} else {
+			self.array = append(self.array, child)
+		}
 	}
 }

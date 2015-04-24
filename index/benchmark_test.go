@@ -1,6 +1,7 @@
 package index_test
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -16,6 +17,11 @@ var letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
 var TIndex = NewTrie()
 
 func init() {
+	flag.Parse()
+	bench := flag.Lookup("test.bench")
+	if "" == bench.Value.String() {
+		return
+	}
 	PrintMem("Initial Stat")
 	t := time.Now()
 	i := 1000000
@@ -64,7 +70,7 @@ func PrintMem(msg string) {
 		sv := v.Field(i)
 		switch st.Type.String() {
 		case "uint64":
-			fmt.Println(st.Name, "->", sv.Uint())
+			fmt.Println(st.Name, "->", Readable(sv.Uint()))
 		case "int64":
 			fmt.Println(st.Name, "->", sv.Int())
 		case "bool":
