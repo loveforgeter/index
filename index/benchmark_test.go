@@ -16,6 +16,8 @@ import (
 var letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 var TIndex = NewTrie()
 var MIndex = NewIndexMap()
+var ATIndex = NewATrie()
+var STIndex = NewSTrie()
 
 func init() {
 	var benchmark string
@@ -32,11 +34,24 @@ func init() {
 		TIndex.Insert(randomKey(), i)
 		i--
 	}
-	//time.Sleep(time.Duration(15) * time.Second)
 	PrintMem("Stat After Trie Init")
+	os.Exit(0)
+	i = 1000000
+	for i > 0 {
+		ATIndex.Insert(randomKey(), i)
+		i--
+	}
+	PrintMem("Stat After Slice Trie Init")
+	os.Exit(0)
 	i = 1000000
 	for i > 0 {
 		MIndex.Insert(randomKey(), i)
+		i--
+	}
+	PrintMem("Stat After Sparse Array Trie Init")
+	i = 1000000
+	for i > 0 {
+		STIndex.Insert(randomKey(), i)
 		i--
 	}
 	PrintMem("Stat After Map Init")
@@ -51,6 +66,30 @@ func BenchmarkTrieHasKey(b *testing.B) {
 func BenchmarkTrieHasPrefix(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		TIndex.HasPrefix(randomKey())
+	}
+}
+
+func BenchmarkATrieHasKey(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ATIndex.HasKey(randomKey())
+	}
+}
+
+func BenchmarkATrieHasPrefix(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ATIndex.HasPrefix(randomKey())
+	}
+}
+
+func BenchmarkSTrieHasKey(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		STIndex.HasKey(randomKey())
+	}
+}
+
+func BenchmarkSTrieHasPrefix(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		STIndex.HasPrefix(randomKey())
 	}
 }
 
@@ -91,7 +130,7 @@ func PrintMem(msg string) {
 		sv := v.Field(i)
 		switch st.Type.String() {
 		case "uint64":
-			fmt.Println(st.Name, "->", Readable(sv.Uint()))
+			fmt.Println(st.Name, "->", sv.Uint())
 		case "int64":
 			fmt.Println(st.Name, "->", sv.Int())
 		case "bool":

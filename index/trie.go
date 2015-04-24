@@ -2,7 +2,6 @@ package index
 
 // TrieNode 字典树节点
 type TrieNode struct {
-	key      string             // 节点所表示的字符串
 	value    []interface{}      // 节点的值
 	children map[rune]*TrieNode // 子节点
 }
@@ -30,13 +29,13 @@ func (self *TrieNode) Insert(key string, value interface{}) {
 	for _, ch := range key {
 		if child, ok := node.children[ch]; !ok {
 			child = NewTrieNode()
-			child.key = node.key + string([]rune{ch})
 			node.children[ch] = child
 			node = child
 		} else {
 			node = child
 		}
 	}
+	return
 	node.value = append(node.value, value)
 }
 
@@ -118,7 +117,6 @@ func (self *TrieNode) ValueForPrefix(prefix string) map[string][]interface{} {
 	// 遍历节点并加入结果
 	node.walk(func(n *TrieNode) {
 		if len(n.value) != 0 {
-			ret[n.key] = n.value
 		}
 	})
 
@@ -144,7 +142,6 @@ func (self *TrieNode) Destroy() {
 
 // walk 遍历节点
 func (self *TrieNode) walk(f func(node *TrieNode)) {
-	// fmt.Println(self.key, self.value)
 	f(self)
 	for _, node := range self.children {
 		node.walk(f)
