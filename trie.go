@@ -8,7 +8,7 @@ const (
 type TrieNode struct {
 	key    rune               // 节点代表的值
 	values []interface{}      // 节点的值
-	array  []*TrieNode        // 子节点
+	array  []*TrieNode        // 子节点，当len等于MAX_ARRAY_SIZE时，使用hash存储子节点
 	hash   map[rune]*TrieNode // 子节点
 }
 
@@ -82,7 +82,6 @@ func (self *TrieNode) HasPrefix(prefix string) bool {
 
 // HasSubstr 查看是否存在名称包含substr的节点
 func (self *TrieNode) HasSubstr(substr string) bool {
-	NotImplement("TrieNode.HasSubstr")
 	return false
 }
 
@@ -136,7 +135,6 @@ func (self *TrieNode) ValueForPrefix(prefix string) map[string][]interface{} {
 
 // ValueForSubstr 获取节点名称包含substr的值
 func (self *TrieNode) ValueForSubstr(substr string) map[string][]interface{} {
-	NotImplement("TrieNode.ValueForSubstr")
 	return nil
 }
 
@@ -176,14 +174,13 @@ func (self *TrieNode) get(r rune) *TrieNode {
 
 // set 设置子节点
 func (self *TrieNode) set(r rune, child *TrieNode) {
-	// TODO:重复处理
 	if nil == child {
 		return
 	}
 	if nil != self.hash {
 		self.hash[r] = child
 	} else {
-		if MAX_ARRAY_SIZE == len(self.array) {
+		if MAX_ARRAY_SIZE == len(self.array) { // 转换为hash结构
 			self.hash = make(map[rune]*TrieNode)
 			for _, node := range self.array {
 				self.hash[node.key] = node
