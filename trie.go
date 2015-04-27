@@ -4,9 +4,6 @@ const (
 	MAX_ARRAY_SIZE = 10
 )
 
-type hash map[rune]*TrieNode
-type array []*TrieNode
-
 // TrieNode 字典树节点
 type TrieNode struct {
 	key    rune               // 节点代表的值
